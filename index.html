@@ -9,9 +9,10 @@
       padding: 0;
       background: #ffe6f0;
       overflow: hidden;
-      height: 100%;
       font-family: sans-serif;
+      height: 100%;
     }
+
     #container {
       position: relative;
       width: 100vw;
@@ -20,7 +21,8 @@
       align-items: center;
       justify-content: center;
     }
-    video, canvas, #frame {
+
+    video, canvas, #vignette {
       position: absolute;
       top: 0;
       left: 0;
@@ -29,15 +31,31 @@
       object-fit: cover;
       transform: scaleX(-1);
     }
+
+    video {
+      filter:
+        brightness(1.5)        /* efek putih cerah */
+        contrast(1.4)          /* tegas tapi lembut */
+        saturate(1.3)          /* biar warna kulit gak pucat */
+        sepia(0.05)            /* biar gak terlalu merah */
+        blur(1px)              /* halus */
+        drop-shadow(0 0 30px rgba(255, 192, 203, 0.3));
+    }
+
     canvas {
       z-index: 2;
       pointer-events: none;
     }
-    #frame {
+
+    #vignette {
       z-index: 3;
       pointer-events: none;
-      background: url('https://i.ibb.co/QJrmGzC/frame-pink.png') center/cover no-repeat;
+      background: radial-gradient(ellipse at center,
+        rgba(255, 192, 203, 0) 40%,
+        rgba(255, 182, 193, 0.2) 80%,
+        rgba(255, 105, 180, 0.35) 100%);
     }
+
     #fotoBtn {
       position: absolute;
       bottom: 30px;
@@ -57,23 +75,25 @@
       z-index: 4;
       cursor: pointer;
     }
+
     @media (max-width: 768px) {
       #fotoBtn {
-        bottom: 20px;
         width: 65px;
         height: 65px;
         font-size: 26px;
+        bottom: 20px;
       }
     }
   </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
   <div id="container">
     <video id="kamera" autoplay muted playsinline></video>
     <canvas id="overlay"></canvas>
-    <div id="frame"></div>
+    <div id="vignette"></div>
     <button id="fotoBtn">📸</button>
-    <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
+    <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
   </div>
 
   <script>
@@ -82,9 +102,6 @@
     const context = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
     const downloadLink = document.getElementById('downloadLink');
-
-    // Deteksi perangkat: atur efek berbeda untuk HP dan laptop
-    const isMobile = window.innerWidth <= 768;
 
     async function startKamera() {
       try {
@@ -96,29 +113,31 @@
     }
 
     fotoBtn.addEventListener('click', () => {
-      const width = canvas.width = video.videoWidth;
-      const height = canvas.height = video.videoHeight;
+      const width = canvas.width;
+      const height = canvas.height;
 
       const fotoCanvas = document.createElement('canvas');
-      fotoCanvas.width = isMobile ? 1080 : 800;
-      fotoCanvas.height = isMobile ? 1350 : 608;
-
+      fotoCanvas.width = width;
+      fotoCanvas.height = height;
       const ctx = fotoCanvas.getContext('2d');
-      ctx.translate(fotoCanvas.width, 0);
+
+      // Mirror
+      ctx.translate(width, 0);
       ctx.scale(-1, 1);
 
-      // Efek filter berdasarkan device
-      if (isMobile) {
-        ctx.filter = 'brightness(1.15) contrast(1.1) saturate(1.05) blur(0.3px)';
-      } else {
-        ctx.filter = 'brightness(1.18) contrast(1.2) saturate(1.05) blur(0.4px)';
-      }
+      // Gambar video
+      ctx.drawImage(video, 0, 0, width, height);
 
-      // Gambar video & frame
-      ctx.drawImage(video, 0, 0, fotoCanvas.width, fotoCanvas.height);
+      // Gambar overlay
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.filter = 'none';
-      ctx.drawImage(document.getElementById('frame'), 0, 0, fotoCanvas.width, fotoCanvas.height);
+      ctx.drawImage(canvas, 0, 0, width, height);
+
+      // Tambah vignette pink
+      const grad = ctx.createRadialGradient(width / 2, height / 2, width / 3, width / 2, height / 2, width / 1.2);
+      grad.addColorStop(0, 'rgba(255,192,203,0)');
+      grad.addColorStop(1, 'rgba(255,105,180,0.35)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
 
       const dataURL = fotoCanvas.toDataURL('image/png');
       downloadLink.href = dataURL;
