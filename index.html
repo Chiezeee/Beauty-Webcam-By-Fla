@@ -1,80 +1,147 @@
-<script>
-  const video = document.getElementById('kamera');
-  const canvas = document.getElementById('overlay');
-  const context = canvas.getContext('2d');
-  const fotoBtn = document.getElementById('fotoBtn');
-  const downloadLink = document.getElementById('downloadLink');
-
-  let width = 640;
-  let height = 480;
-
-  async function startKamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-      video.srcObject = stream;
-
-      video.onloadedmetadata = () => {
-        width = video.videoWidth;
-        height = video.videoHeight;
-        canvas.width = width;
-        canvas.height = height;
-      };
-    } catch (err) {
-      alert("Kamera gagal dibuka: " + err.message);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beauty Webcam by Fla</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffe6f0;
+      overflow: hidden;
+      height: 100%;
+      font-family: sans-serif;
     }
-  }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video, canvas {
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      top: 0;
+      left: 0;
+      transform: scaleX(-1);
+      filter: brightness(1.2) contrast(1.1) saturate(1.2);
+    }
+    canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+    #fotoBtn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #ff66a3;
+      border: none;
+      font-size: 30px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #e88eb4;
+      z-index: 3;
+      cursor: pointer;
+    }
+    @media (max-width: 768px) {
+      #fotoBtn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        bottom: 20px;
+      }
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+</head>
+<body>
+  <div id="container">
+    <video id="kamera" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <button id="fotoBtn">📸</button>
+    <a id="downloadLink" download="Foto-Fla.png" style="display:none;"></a>
+  </div>
 
-  async function startDeteksi() {
-    await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
-    await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
+  <script>
+    const video = document.getElementById('kamera');
+    const canvas = document.getElementById('overlay');
+    const context = canvas.getContext('2d');
+    const fotoBtn = document.getElementById('fotoBtn');
+    const downloadLink = document.getElementById('downloadLink');
 
-    video.addEventListener('play', () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    async function startKamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Kamera gagal dibuka: " + err.message);
+      }
+    }
 
-      const draw = async () => {
-        const result = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-          .withFaceLandmarks(true);
+    async function startDeteksi() {
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
 
-        context.clearRect(0, 0, canvas.width, canvas.height);
+      video.addEventListener('play', () => {
+        function draw() {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
 
-        if (result && result.landmarks) {
-          const mouth = result.landmarks.getMouth();
-          context.fillStyle = 'rgba(255, 50, 130, 0.5)';
-          context.beginPath();
-          context.moveTo(mouth[0].x, mouth[0].y);
-          for (let i = 1; i < mouth.length; i++) {
-            context.lineTo(mouth[i].x, mouth[i].y);
-          }
-          context.closePath();
-          context.fill();
+          faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks(true)
+            .then(result => {
+              context.clearRect(0, 0, canvas.width, canvas.height);
+              if (result && result.landmarks) {
+                const mouth = result.landmarks.getMouth();
+                context.fillStyle = 'rgba(255, 100, 150, 0.5)';
+                context.beginPath();
+                context.moveTo(mouth[0].x, mouth[0].y);
+                for (let i = 1; i < mouth.length; i++) {
+                  context.lineTo(mouth[i].x, mouth[i].y);
+                }
+                context.closePath();
+                context.fill();
+              }
+            });
+
+          requestAnimationFrame(draw);
         }
+        draw();
+      });
+    }
 
-        requestAnimationFrame(draw);
-      };
+    fotoBtn.addEventListener('click', () => {
+      const width = canvas.width;
+      const height = canvas.height;
+      const fotoCanvas = document.createElement('canvas');
+      fotoCanvas.width = width;
+      fotoCanvas.height = height;
+      const ctx = fotoCanvas.getContext('2d');
 
-      draw();
+      ctx.translate(width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, width, height);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(canvas, 0, 0, width, height);
+
+      const dataURL = fotoCanvas.toDataURL('image/png');
+      downloadLink.href = dataURL;
+      downloadLink.click();
     });
-  }
 
-  fotoBtn.addEventListener('click', () => {
-    const fotoCanvas = document.createElement('canvas');
-    fotoCanvas.width = width;
-    fotoCanvas.height = height;
-    const ctx = fotoCanvas.getContext('2d');
-
-    ctx.translate(width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, width, height);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(canvas, 0, 0, width, height);
-
-    const dataURL = fotoCanvas.toDataURL('image/png');
-    downloadLink.href = dataURL;
-    downloadLink.click();
-  });
-
-  startKamera();
-  startDeteksi();
-</script>
+    startKamera();
+    startDeteksi();
+  </script>
+</body>
+</html>
