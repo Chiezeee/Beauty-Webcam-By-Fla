@@ -6,26 +6,129 @@
   <title>Beauty Webcam by Fla</title>
   <style>
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
-    body {
-      margin: 0;
+    body, html {
+      height: 100%;
+      background-color: #ffe6f0;
       font-family: sans-serif;
-      background: #ffe6f0;
+      overflow: hidden;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      background: #ffd6e8;
+      padding: 10px;
+    }
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+      filter: brightness(1.2) contrast(1.05) saturate(1.05);
+    }
+    canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+    #fotoBtn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #ff66a3;
+      border: none;
+      font-size: 28px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #e88eb4;
+      z-index: 3;
+      cursor: pointer;
+    }
+    @media (max-width: 768px) {
+      #fotoBtn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        bottom: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <video id="kamera" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <button id="fotoBtn">📸</button>
+    <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
+  </div>
+
+  <script>
+    const video = document.getElementById('kamera');
+    const canvas = document.getElementById('overlay');
+    const context = canvas.getContext('2d');
+    const fotoBtn = document.getElementById('fotoBtn');
+    const downloadLink = document.getElementById('downloadLink');
+
+    async function startKamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Kamera gagal dibuka: " + err.message);
+      }
     }
 
-    .wrapper {
-      position: relative;
-      width: 90vw;
-      max-width: 1080px;
-      aspect-ratio: 1080 / 608;
-      background: white;
-      border: 20px solid #ff99c8;
-      border-radius: 20px;
-      box-shadow: 0 0 20
+    function updateCanvasSize() {
+      const isVertical = window.innerHeight > window.innerWidth;
+      if (isVertical) {
+        canvas.width = 608;
+        canvas.height = 1080;
+      } else {
+        canvas.width = 1080;
+        canvas.height = 608;
+      }
+    }
 
+    fotoBtn.addEventListener('click', () => {
+      updateCanvasSize();
+      const isVertical = window.innerHeight > window.innerWidth;
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const ctx = tempCanvas.getContext('2d');
+
+      ctx.translate(tempCanvas.width, 0);
+      ctx.scale(-1, 1);
+
+      // Gambar dari video ke canvas
+      ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Tambahkan frame overlay (pink frame di hasil foto)
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+      const dataURL = tempCanvas.toDataURL('image/png');
+      downloadLink.href = dataURL;
+      downloadLink.click();
+    });
+
+    startKamera();
+  </script>
+</body>
+</html>
