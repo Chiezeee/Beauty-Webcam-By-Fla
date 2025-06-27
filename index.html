@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Beauty Webcam by Fla</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background: #ffe6f0;
       font-family: sans-serif;
-      height: 100%;
       overflow: hidden;
+      height: 100%;
     }
 
     #container {
@@ -18,118 +19,128 @@
       width: 100vw;
       height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
-      flex-direction: column;
-    }
-
-    .camera-wrapper {
-      position: relative;
-      width: 90vw;
-      max-width: 1080px;
-      aspect-ratio: 9 / 5;
-      border: 20px solid #ffc1d9;
-      box-shadow: 0 0 30px #e88eb4;
-      border-radius: 20px;
-      overflow: hidden;
+      align-items: center;
     }
 
     video, canvas {
       position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1); /* mirror */
-      filter: brightness(1.15) contrast(1.1) saturate(1.05) blur(0.3px);
+      filter: brightness(1.12) contrast(1.05) saturate(1.1) blur(0.5px);
     }
 
-    canvas {
+    #frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 30px solid #ffb6c1;
+      box-sizing: border-box;
       z-index: 2;
       pointer-events: none;
     }
 
     #fotoBtn {
-      margin-top: 20px;
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
       width: 70px;
       height: 70px;
+      background: #ff69b4;
       border-radius: 50%;
-      background-color: #ff66a3;
       border: none;
-      font-size: 28px;
       color: white;
+      font-size: 30px;
+      box-shadow: 0 0 15px #d46da6;
+      cursor: pointer;
+      z-index: 3;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 15px #e88eb4;
-      cursor: pointer;
-      z-index: 5;
     }
 
     @media (max-width: 768px) {
-      .camera-wrapper {
-        width: 90vw;
-        aspect-ratio: 9 / 16;
-      }
-
       #fotoBtn {
-        margin-top: 10px;
+        bottom: 40px;
         width: 60px;
         height: 60px;
-        font-size: 24px;
+        font-size: 26px;
       }
     }
   </style>
 </head>
 <body>
   <div id="container">
-    <div class="camera-wrapper">
-      <video id="kamera" autoplay muted playsinline></video>
-      <canvas id="overlay"></canvas>
-    </div>
+    <video id="kamera" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="frame"></div>
     <button id="fotoBtn">📸</button>
-    <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
+    <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
   </div>
 
   <script>
     const video = document.getElementById('kamera');
-    const canvas = document.getElementById('overlay');
+    const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
     const downloadLink = document.getElementById('downloadLink');
 
+    // Mulai kamera
     async function startKamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         video.srcObject = stream;
       } catch (err) {
-        alert("Kamera gagal dibuka: " + err.message);
+        alert('Gagal membuka kamera: ' + err.message);
+      }
+    }
+
+    // Menyesuaikan ukuran canvas dengan video
+    function sesuaikanUkuran() {
+      const rasioHP = window.innerWidth / window.innerHeight;
+
+      if (rasioHP < 0.7) {
+        // HP, ukuran vertikal
+        canvas.width = 1080;
+        canvas.height = 1350;
+      } else {
+        // Laptop/desktop, ukuran horizontal
+        canvas.width = 1080;
+        canvas.height = 608;
       }
     }
 
     fotoBtn.addEventListener('click', () => {
-      const wrapper = document.querySelector('.camera-wrapper');
-      const width = wrapper.clientWidth;
-      const height = wrapper.clientHeight;
+      sesuaikanUkuran();
+      const ctx = canvas.getContext('2d');
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
 
-      const fotoCanvas = document.createElement('canvas');
-      fotoCanvas.width = width;
-      fotoCanvas.height = height;
-      const ctx = fotoCanvas.getContext('2d');
-
-      ctx.filter = "brightness(1.15) contrast(1.1) saturate(1.05) blur(0.3px)";
-      ctx.translate(width, 0);
+      ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, width, height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-      ctx.drawImage(canvas, 0, 0, width, height); // Add frame overlay
+      // gambar frame pink di hasil
+      ctx.lineWidth = 60;
+      ctx.strokeStyle = "#ffb6c1";
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-      const dataURL = fotoCanvas.toDataURL('image/png');
+      const dataURL = canvas.toDataURL('image/png');
       downloadLink.href = dataURL;
       downloadLink.click();
     });
 
+    window.addEventListener('resize', sesuaikanUkuran);
     startKamera();
+    sesuaikanUkuran();
   </script>
 </body>
 </html>
