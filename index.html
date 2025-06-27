@@ -7,46 +7,54 @@
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #fbeff2; /* warna pale pink */
-      overflow: hidden;
+      background: #ffe6f0; /* pink soft */
       font-family: 'Helvetica Neue', sans-serif;
+      overflow: hidden;
     }
+
     #container {
       position: relative;
       width: 100vw;
       height: 100vh;
-      background-color: #fbeff2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ffe6f0;
     }
+
     video, canvas {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scaleX(-1);
-      width: 95vw;
-      height: auto;
-      max-height: 95vh;
+      width: auto;
+      height: 90vh;
       border-radius: 20px;
-      box-shadow: 0 0 40px rgba(255, 192, 203, 0.8);
-      filter: brightness(1.15) contrast(1.1); /* efek kulit lebih cerah */
+      box-shadow: 0 0 40px rgba(255, 182, 193, 0.8);
+      transform: scaleX(-1); /* mirror */
+      filter: brightness(1.1) contrast(1.15);
     }
+
     canvas {
       z-index: 2;
       pointer-events: none;
     }
+
     #fotoBtn {
       position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 24px;
-      font-size: 18px;
-      background-color: #ffb6c1;
-      color: white;
+      bottom: 40px;
+      right: 40px;
+      background-color: #ff99cc;
       border: none;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #e68ea0;
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      box-shadow: 0 0 15px #e88eb4;
+      font-size: 30px;
+      color: white;
       cursor: pointer;
       z-index: 3;
+    }
+
+    #fotoBtn:hover {
+      background-color: #ff66aa;
     }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
@@ -55,8 +63,8 @@
   <div id="container">
     <video id="kamera" autoplay muted playsinline></video>
     <canvas id="overlay"></canvas>
-    <button id="fotoBtn">📸 Ambil Foto</button>
-    <a id="downloadLink" download="fotoFla.png" style="display:none;"></a>
+    <button id="fotoBtn">📸</button>
+    <a id="downloadLink" download="fotoFla.png" style="display: none;"></a>
   </div>
 
   <script>
@@ -92,7 +100,7 @@
 
           if (result && result.landmarks) {
             const mouth = result.landmarks.getMouth();
-            context.fillStyle = 'rgba(255, 40, 120, 0.5)'; // warna lipstick
+            context.fillStyle = 'rgba(255, 50, 130, 0.5)'; // pink lipstick
             context.beginPath();
             context.moveTo(mouth[0].x, mouth[0].y);
             for (let i = 1; i < mouth.length; i++) {
@@ -130,4 +138,3 @@
   </script>
 </body>
 </html>
-
