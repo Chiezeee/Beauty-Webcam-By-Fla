@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beauty Webcam by Fla 💄</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #fbeff2; /* warna pale pink */
+      overflow: hidden;
+      font-family: 'Helvetica Neue', sans-serif;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-color: #fbeff2;
+    }
+    video, canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scaleX(-1);
+      width: 95vw;
+      height: auto;
+      max-height: 95vh;
+      border-radius: 20px;
+      box-shadow: 0 0 40px rgba(255, 192, 203, 0.8);
+      filter: brightness(1.15) contrast(1.1); /* efek kulit lebih cerah */
+    }
+    canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+    #fotoBtn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: #ffb6c1;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #e68ea0;
+      cursor: pointer;
+      z-index: 3;
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+</head>
+<body>
+  <div id="container">
+    <video id="kamera" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <button id="fotoBtn">📸 Ambil Foto</button>
+    <a id="downloadLink" download="fotoFla.png" style="display:none;"></a>
+  </div>
+
+  <script>
+    const video = document.getElementById('kamera');
+    const canvas = document.getElementById('overlay');
+    const context = canvas.getContext('2d');
+    const fotoBtn = document.getElementById('fotoBtn');
+    const downloadLink = document.getElementById('downloadLink');
+
+    async function startKamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Gagal membuka kamera: " + err.message);
+      }
+    }
+
+    async function startFaceDetection() {
+      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
+
+      video.addEventListener('play', () => {
+        const detect = async () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const result = await faceapi
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks(true);
+
+          context.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (result && result.landmarks) {
+            const mouth = result.landmarks.getMouth();
+            context.fillStyle = 'rgba(255, 40, 120, 0.5)'; // warna lipstick
+            context.beginPath();
+            context.moveTo(mouth[0].x, mouth[0].y);
+            for (let i = 1; i < mouth.length; i++) {
+              context.lineTo(mouth[i].x, mouth[i].y);
+            }
+            context.closePath();
+            context.fill();
+          }
+
+          requestAnimationFrame(detect);
+        };
+        detect();
+      });
+    }
+
+    fotoBtn.addEventListener('click', () => {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      tempCtx.translate(tempCanvas.width, 0);
+      tempCtx.scale(-1, 1);
+      tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+      tempCtx.setTransform(1, 0, 0, 1, 0, 0);
+      tempCtx.drawImage(canvas, 0, 0);
+
+      const dataURL = tempCanvas.toDataURL("image/png");
+      downloadLink.href = dataURL;
+      downloadLink.click();
+    });
+
+    startKamera();
+    startFaceDetection();
+  </script>
+</body>
+</html>
+
