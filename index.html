@@ -34,13 +34,11 @@
 
     video {
       filter:
-        brightness(1.05)         /* brightness +5 */
+        brightness(0.9)          /* exposure -20 + brightness +5 */
         contrast(0.85)           /* contrast -15 */
-        saturate(1.05)           /* biar gak pucat */
-        sepia(0.03)              /* agar tidak terlalu kuning */
-        opacity(0.95)            /* dehaze efek */
-        blur(2px)                /* mist efek */
-        drop-shadow(0 0 30px rgba(255, 192, 203, 0.3)); /* glow pink */
+        saturate(1.1)            /* dehaze -5 */
+        blur(1.2px)              /* mist */
+        drop-shadow(0 0 30px rgba(255, 192, 203, 0.3)); /* glow */
     }
 
     canvas {
@@ -52,8 +50,8 @@
       z-index: 3;
       pointer-events: none;
       background: radial-gradient(ellipse at center,
-        rgba(255, 192, 203, 0) 40%,
-        rgba(255, 182, 193, 0.1) 80%,
+        rgba(255, 192, 203, 0.05) 40%,
+        rgba(255, 182, 193, 0.12) 80%,
         rgba(255, 105, 180, 0.2) 100%);
     }
 
@@ -122,23 +120,27 @@
       fotoCanvas.height = height;
       const ctx = fotoCanvas.getContext('2d');
 
-      // Mirror
       ctx.translate(width, 0);
       ctx.scale(-1, 1);
-
-      // Gambar video
       ctx.drawImage(video, 0, 0, width, height);
-
-      // Gambar overlay
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(canvas, 0, 0, width, height);
 
-      // Tambah vignette pink
+      // Vignette tambahan di hasil foto
       const grad = ctx.createRadialGradient(width / 2, height / 2, width / 3, width / 2, height / 2, width / 1.2);
-      grad.addColorStop(0, 'rgba(255,192,203,0)');
+      grad.addColorStop(0, 'rgba(255,192,203,0.05)');
       grad.addColorStop(1, 'rgba(255,105,180,0.2)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
+
+      // Grain
+      for (let i = 0; i < width * height * 0.02; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const opacity = Math.random() * 0.05;
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
 
       const dataURL = fotoCanvas.toDataURL('image/png');
       downloadLink.href = dataURL;
