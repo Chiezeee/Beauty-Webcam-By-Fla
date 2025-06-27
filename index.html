@@ -6,106 +6,26 @@
   <title>Beauty Webcam by Fla</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
     body {
-      background: #ffe6f0;
+      margin: 0;
       font-family: sans-serif;
+      background: #ffe6f0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      overflow: hidden;
     }
-    .frame {
+
+    .wrapper {
       position: relative;
-      width: 100%;
+      width: 90vw;
       max-width: 1080px;
       aspect-ratio: 1080 / 608;
-      border: 16px solid #ffb6d1;
-      border-radius: 20px;
-      box-shadow: 0 0 20px #ffaec8;
       background: white;
-      overflow: hidden;
-    }
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-      filter: brightness(1.2) contrast(1.1) saturate(1.2);
-    }
-    #fotoBtn {
-      margin-top: 20px;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: #ff66a3;
-      border: none;
-      font-size: 32px;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 15px #e88eb4;
-      cursor: pointer;
-      z-index: 10;
-    }
-    @media (max-width: 768px) {
-      .frame {
-        width: 95vw;
-        aspect-ratio: 1080 / 608;
-      }
-      #fotoBtn {
-        width: 65px;
-        height: 65px;
-        font-size: 28px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="frame">
-    <video id="kamera" autoplay muted playsinline></video>
-  </div>
-  <button id="fotoBtn">📸</button>
-  <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
+      border: 20px solid #ff99c8;
+      border-radius: 20px;
+      box-shadow: 0 0 20
 
-  <script>
-    const video = document.getElementById("kamera");
-    const fotoBtn = document.getElementById("fotoBtn");
-    const downloadLink = document.getElementById("downloadLink");
-
-    async function startKamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        video.srcObject = stream;
-      } catch (err) {
-        alert("Kamera gagal dibuka: " + err.message);
-      }
-    }
-
-    fotoBtn.addEventListener("click", () => {
-      const canvas = document.createElement("canvas");
-      const width = 1080;
-      const height = 608;
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      ctx.translate(width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, width, height);
-
-      const dataURL = canvas.toDataURL("image/png");
-      downloadLink.href = dataURL;
-      downloadLink.click();
-    });
-
-    startKamera();
-  </script>
-</body>
-</html>
