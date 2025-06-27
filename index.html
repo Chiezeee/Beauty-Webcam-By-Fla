@@ -1,74 +1,80 @@
-
-79
-80
-81
-82
-83
-84
-85
-86
-87
-88
-89
-90
-91
-92
-93
-94
-95
-96
-97
-98
-99
-100
-101
-102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115
-116
-117
-118
-119
-120
-121
-122
-123
-124
-125
-126
-127
-128
-129
-130
-131
-132
-133
-134
-135
-136
-137
-138
-139
-140
-141
-142
-143
-144
-145
-146
-147
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beauty Webcam by Fla</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffe6f0;
+      overflow: hidden;
+      font-family: sans-serif;
+      height: 100%;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video, canvas {
+      position: absolute;
       top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      filter: brightness(1.15) contrast(1.05);
+    }
+    canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+    #fotoBtn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #ff66a3;
+      border: none;
+      font-size: 32px;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #e88eb4;
+      z-index: 4;
+      cursor: pointer;
+    }
+    @media (max-width: 768px) {
+      #fotoBtn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        bottom: 20px;
+        display: flex;
+      }
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+</head>
+<body>
+  <div id="container">
+    <video id="kamera" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <button id="fotoBtn">📸</button>
+    <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
+  </div>
+
+  <script>
+    const video = document.getElementById('kamera');
     const canvas = document.getElementById('overlay');
     const context = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
