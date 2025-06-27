@@ -29,15 +29,17 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: scaleX(-1); /* mirror kamera */
+      transform: scaleX(-1);
     }
 
     video {
       filter:
-        brightness(1.15)
-        contrast(1.2)
-        saturate(1.2)
-        drop-shadow(0 0 20px rgba(255, 182, 193, 0.2));
+        brightness(1.5)        /* efek putih cerah */
+        contrast(1.4)          /* tegas tapi lembut */
+        saturate(1.3)          /* biar warna kulit gak pucat */
+        sepia(0.05)            /* biar gak terlalu merah */
+        blur(1px)              /* halus */
+        drop-shadow(0 0 30px rgba(255, 192, 203, 0.3));
     }
 
     canvas {
@@ -51,7 +53,7 @@
       background: radial-gradient(ellipse at center,
         rgba(255, 192, 203, 0) 40%,
         rgba(255, 182, 193, 0.2) 80%,
-        rgba(255, 182, 193, 0.5) 100%);
+        rgba(255, 105, 180, 0.35) 100%);
     }
 
     #fotoBtn {
@@ -119,24 +121,22 @@
       fotoCanvas.height = height;
       const ctx = fotoCanvas.getContext('2d');
 
-      // Mirror foto
+      // Mirror
       ctx.translate(width, 0);
       ctx.scale(-1, 1);
 
-      // Kamera
+      // Gambar video
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Reset transform lalu gambar overlay dan vignette
+      // Gambar overlay
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(canvas, 0, 0, width, height);
 
-      // Tambahkan efek vignette ke foto
-      ctx.fillStyle = ctx.createRadialGradient(
-        width / 2, height / 2, width / 3,
-        width / 2, height / 2, width / 1.2
-      );
-      ctx.fillStyle.addColorStop(0, 'rgba(255,192,203,0)');
-      ctx.fillStyle.addColorStop(1, 'rgba(255,182,193,0.3)');
+      // Tambah vignette pink
+      const grad = ctx.createRadialGradient(width / 2, height / 2, width / 3, width / 2, height / 2, width / 1.2);
+      grad.addColorStop(0, 'rgba(255,192,203,0)');
+      grad.addColorStop(1, 'rgba(255,105,180,0.35)');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
       const dataURL = fotoCanvas.toDataURL('image/png');
