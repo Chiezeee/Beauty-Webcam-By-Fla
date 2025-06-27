@@ -2,24 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Beauty Webcam by Fla</title>
   <style>
-    html, body {
+    * {
       margin: 0;
       padding: 0;
-      height: 100%;
-      background-color: #ffe6f0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #ffe6f0;
       font-family: sans-serif;
-      overflow: hidden;
-    }
-
-    #container {
-      position: relative;
-      width: 100vw;
       height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
       overflow: hidden;
     }
-
+    .frame {
+      position: relative;
+      width: 1080px;
+      height: 608px;
+      max-width: 90vw;
+      max-height: 70vh;
+      border: 20px solid #ffaad4;
+      border-radius: 20px;
+      box-shadow: 0 0 20px #ffaec8;
+      overflow: hidden;
+      background: white;
+    }
     video, canvas {
       position: absolute;
       top: 0;
@@ -28,20 +40,9 @@
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
-      filter: brightness(1.15) contrast(1.05);
     }
-
-    canvas {
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    /* Tombol foto */
     #fotoBtn {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
+      margin-top: 20px;
       width: 80px;
       height: 80px;
       border-radius: 50%;
@@ -53,125 +54,65 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 15px #e88eb4;
-      z-index: 3;
       cursor: pointer;
     }
-
     @media (max-width: 768px) {
-      #fotoBtn {
-        width: 70px;
-        height: 70px;
-        font-size: 28px;
-        bottom: 20px;
+      .frame {
+        max-height: 50vh;
       }
-    }
-
-    /* Frame pink untuk border hasil foto */
-    .frame-pink {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 20px solid rgba(255, 102, 163, 0.4);
-      box-sizing: border-box;
-      z-index: 2;
-      pointer-events: none;
+      #fotoBtn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
     }
   </style>
-
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
-  <div id="container">
+  <div class="frame">
     <video id="kamera" autoplay muted playsinline></video>
     <canvas id="overlay"></canvas>
-    <div class="frame-pink"></div>
-    <button id="fotoBtn">📸</button>
-    <a id="downloadLink" download="Foto-Fla.png" style="display:none;"></a>
   </div>
 
-  <script>
-    const video = document.getElementById('kamera');
-    const canvas = document.getElementById('overlay');
-    const context = canvas.getContext('2d');
-    const fotoBtn = document.getElementById('fotoBtn');
-    const downloadLink = document.getElementById('downloadLink');
-    const frame = document.querySelector('.frame-pink');
+  <button id="fotoBtn">📸</button>
+  <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
 
+  <script>
+    const video = document.getElementById("kamera");
+    const canvas = document.getElementById("overlay");
+    const context = canvas.getContext("2d");
+    const fotoBtn = document.getElementById("fotoBtn");
+    const downloadLink = document.getElementById("downloadLink");
+
+    // Nyalakan kamera
     async function startKamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
       } catch (err) {
-        alert("Kamera gagal dibuka: " + err.message);
+        alert("Gagal membuka kamera: " + err.message);
       }
     }
 
-    async function startDeteksi() {
-      await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
-      await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
-
-      video.addEventListener('play', () => {
-        function draw() {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          faceapi
-            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks(true)
-            .then(result => {
-              context.clearRect(0, 0, canvas.width, canvas.height);
-              if (result && result.landmarks) {
-                const mouth = result.landmarks.getMouth();
-                context.fillStyle = 'rgba(255, 80, 140, 0.5)';
-                context.beginPath();
-                context.moveTo(mouth[0].x, mouth[0].y);
-                for (let i = 1; i < mouth.length; i++) {
-                  context.lineTo(mouth[i].x, mouth[i].y);
-                }
-                context.closePath();
-                context.fill();
-              }
-            });
-
-          requestAnimationFrame(draw);
-        }
-        draw();
-      });
-    }
-
-    fotoBtn.addEventListener('click', () => {
-      const width = video.videoWidth;
-      const height = video.videoHeight;
-
-      const fotoCanvas = document.createElement('canvas');
+    // Ambil foto
+    fotoBtn.addEventListener("click", () => {
+      const width = 1080;
+      const height = 608;
+      const fotoCanvas = document.createElement("canvas");
       fotoCanvas.width = width;
       fotoCanvas.height = height;
-      const ctx = fotoCanvas.getContext('2d');
+      const ctx = fotoCanvas.getContext("2d");
 
-      // Mirror + draw video
-      ctx.translate(width, 0);
+      ctx.translate(width, 0); // mirror
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Draw lipstick overlay
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(canvas, 0, 0, width, height);
-
-      // Draw pink frame
-      ctx.lineWidth = 40;
-      ctx.strokeStyle = 'rgba(255, 102, 163, 0.4)';
-      ctx.strokeRect(0, 0, width, height);
-
-      const dataURL = fotoCanvas.toDataURL('image/png');
+      const dataURL = fotoCanvas.toDataURL("image/png");
       downloadLink.href = dataURL;
       downloadLink.click();
     });
 
     startKamera();
-    startDeteksi();
   </script>
 </body>
 </html>
-
