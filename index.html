@@ -7,7 +7,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      background: #ffeef5;
+      background: #ffe6f0;
       overflow: hidden;
       font-family: sans-serif;
       height: 100%;
@@ -22,7 +22,7 @@
       justify-content: center;
     }
 
-    video, canvas, #vignette, #mist {
+    video, canvas, #vignette {
       position: absolute;
       top: 0;
       left: 0;
@@ -34,11 +34,13 @@
 
     video {
       filter:
-        brightness(1.05)
-        contrast(0.85)
-        saturate(1.1)
-        sepia(0.05)
-        blur(1px);
+        brightness(1.05)         /* brightness +5 */
+        contrast(0.85)           /* contrast -15 */
+        saturate(1.05)           /* biar gak pucat */
+        sepia(0.03)              /* agar tidak terlalu kuning */
+        opacity(0.95)            /* dehaze efek */
+        blur(2px)                /* mist efek */
+        drop-shadow(0 0 30px rgba(255, 192, 203, 0.3)); /* glow pink */
     }
 
     canvas {
@@ -46,19 +48,13 @@
       pointer-events: none;
     }
 
-    #mist {
-      z-index: 3;
-      background: rgba(255, 255, 255, 0.15);
-      pointer-events: none;
-    }
-
     #vignette {
-      z-index: 4;
-      background: radial-gradient(ellipse at center,
-        rgba(255, 255, 255, 0) 40%,
-        rgba(255, 182, 193, 0.12) 80%,
-        rgba(255, 105, 180, 0.25) 100%);
+      z-index: 3;
       pointer-events: none;
+      background: radial-gradient(ellipse at center,
+        rgba(255, 192, 203, 0) 40%,
+        rgba(255, 182, 193, 0.1) 80%,
+        rgba(255, 105, 180, 0.2) 100%);
     }
 
     #fotoBtn {
@@ -77,7 +73,7 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 15px #e88eb4;
-      z-index: 5;
+      z-index: 4;
       cursor: pointer;
     }
 
@@ -90,12 +86,12 @@
       }
     }
   </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
   <div id="container">
     <video id="kamera" autoplay muted playsinline></video>
     <canvas id="overlay"></canvas>
-    <div id="mist"></div>
     <div id="vignette"></div>
     <button id="fotoBtn">📸</button>
     <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
@@ -118,40 +114,31 @@
     }
 
     fotoBtn.addEventListener('click', () => {
-      const width = canvas.width = video.videoWidth;
-      const height = canvas.height = video.videoHeight;
+      const width = canvas.width;
+      const height = canvas.height;
 
       const fotoCanvas = document.createElement('canvas');
       fotoCanvas.width = width;
       fotoCanvas.height = height;
       const ctx = fotoCanvas.getContext('2d');
 
+      // Mirror
       ctx.translate(width, 0);
       ctx.scale(-1, 1);
 
+      // Gambar video
       ctx.drawImage(video, 0, 0, width, height);
+
+      // Gambar overlay
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.drawImage(canvas, 0, 0, width, height);
 
-      // Efek mist overlay
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.fillRect(0, 0, width, height);
-
-      // Efek vignette pink
-      const grad = ctx.createRadialGradient(width / 2, height / 2, width / 4, width / 2, height / 2, width / 1.1);
-      grad.addColorStop(0, 'rgba(255,255,255,0)');
-      grad.addColorStop(1, 'rgba(255,105,180,0.25)');
+      // Tambah vignette pink
+      const grad = ctx.createRadialGradient(width / 2, height / 2, width / 3, width / 2, height / 2, width / 1.2);
+      grad.addColorStop(0, 'rgba(255,192,203,0)');
+      grad.addColorStop(1, 'rgba(255,105,180,0.2)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
-
-      // Simulasi grain (bintik putih halus)
-      for (let i = 0; i < 500; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const alpha = Math.random() * 0.07;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(x, y, 1, 1);
-      }
 
       const dataURL = fotoCanvas.toDataURL('image/png');
       downloadLink.href = dataURL;
