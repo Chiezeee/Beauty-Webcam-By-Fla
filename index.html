@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Beauty Webcam by Fla</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
       margin: 0;
@@ -13,6 +13,7 @@
       height: 100%;
       overflow: hidden;
     }
+
     #container {
       position: relative;
       width: 100vw;
@@ -21,23 +22,38 @@
       align-items: center;
       justify-content: center;
     }
+
     video, canvas {
       position: absolute;
-      border-radius: 20px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      filter: brightness(1.15) contrast(1.05) saturate(1.05);
       transform: scaleX(-1);
+      filter: brightness(1.2) contrast(1.05) saturate(1.05) blur(0.6px);
     }
-    video {
-      z-index: 1;
-    }
+
     canvas {
       z-index: 2;
       pointer-events: none;
     }
+
+    #frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 30px solid #ffaad4;
+      box-sizing: border-box;
+      z-index: 3;
+      pointer-events: none;
+    }
+
     #fotoBtn {
       position: absolute;
-      bottom: 60px;
+      bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
       width: 80px;
@@ -45,32 +61,33 @@
       border-radius: 50%;
       background: #ff66a3;
       border: none;
-      font-size: 30px;
+      font-size: 36px;
       color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 15px #e88eb4;
-      z-index: 3;
+      z-index: 4;
       cursor: pointer;
     }
+
     @media (max-width: 768px) {
       video, canvas {
-        width: 90vw;
-        height: auto;
-        max-height: 90vh;
+        height: 100%;
+        width: auto;
+        max-width: 100vw;
+        max-height: 100vh;
       }
+
       #fotoBtn {
-        bottom: 30px;
+        bottom: 90px;
         width: 70px;
         height: 70px;
-        font-size: 28px;
+        font-size: 30px;
       }
-    }
-    @media (min-width: 769px) {
-      video, canvas {
-        width: 800px;
-        height: 608px;
+
+      #frame {
+        border-width: 20px;
       }
     }
   </style>
@@ -79,63 +96,52 @@
   <div id="container">
     <video id="kamera" autoplay muted playsinline></video>
     <canvas id="overlay"></canvas>
+    <div id="frame"></div>
     <button id="fotoBtn">📸</button>
-    <a id="downloadLink" download="Fla-Foto.png" style="display:none;"></a>
+    <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
   </div>
 
   <script>
     const video = document.getElementById('kamera');
     const canvas = document.getElementById('overlay');
-    const ctx = canvas.getContext('2d');
+    const context = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
     const downloadLink = document.getElementById('downloadLink');
 
     async function startKamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
       } catch (err) {
         alert("Kamera gagal dibuka: " + err.message);
       }
     }
 
-    function updateCanvasSize() {
-      const rect = video.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      canvas.style.width = rect.width + "px";
-      canvas.style.height = rect.height + "px";
-    }
-
-    video.addEventListener('loadedmetadata', () => {
-      updateCanvasSize();
-      window.addEventListener('resize', updateCanvasSize);
-    });
-
     fotoBtn.addEventListener('click', () => {
-      const width = video.videoWidth;
-      const height = video.videoHeight;
+      const deviceIsMobile = window.innerWidth <= 768;
 
-      const hasil = document.createElement('canvas');
-      const rasio = window.innerWidth <= 768 ? (1080 / 1350) : (800 / 608);
-      hasil.width = window.innerWidth <= 768 ? 1080 : 800;
-      hasil.height = Math.round(hasil.width / rasio);
+      const width = deviceIsMobile ? 1080 : 800;
+      const height = deviceIsMobile ? 1350 : 608;
 
-      const hasilCtx = hasil.getContext('2d');
+      const fotoCanvas = document.createElement('canvas');
+      fotoCanvas.width = width;
+      fotoCanvas.height = height;
+      const ctx = fotoCanvas.getContext('2d');
 
-      // mirror image
-      hasilCtx.translate(hasil.width, 0);
-      hasilCtx.scale(-1, 1);
+      ctx.translate(width, 0);
+      ctx.scale(-1, 1);
 
-      // draw video
-      hasilCtx.drawImage(video, 0, 0, hasil.width, hasil.height);
+      ctx.drawImage(video, 0, 0, width, height);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(canvas, 0, 0, width, height);
 
-      // draw frame pink (optional)
-      hasilCtx.setTransform(1, 0, 0, 1, 0, 0);
-      hasilCtx.fillStyle = "rgba(255, 204, 229, 0.25)";
-      hasilCtx.fillRect(0, 0, hasil.width, hasil.height);
+      // Tambahkan frame pink ke hasil
+      ctx.fillStyle = '#ffaad4';
+      ctx.lineWidth = deviceIsMobile ? 40 : 30;
+      ctx.strokeStyle = '#ffaad4';
+      ctx.strokeRect(0, 0, width, height);
 
-      const dataURL = hasil.toDataURL("image/png");
+      const dataURL = fotoCanvas.toDataURL('image/png');
       downloadLink.href = dataURL;
       downloadLink.click();
     });
@@ -144,4 +150,3 @@
   </script>
 </body>
 </html>
-
