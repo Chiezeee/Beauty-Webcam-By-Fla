@@ -3,17 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Beauty Webcam by Fla</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: #ffe6f0;
+      background: #ffd6e8;
       font-family: sans-serif;
       overflow: hidden;
       height: 100%;
     }
-
     #container {
       position: relative;
       width: 100vw;
@@ -22,55 +20,51 @@
       justify-content: center;
       align-items: center;
     }
-
+    #frame {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 20px solid #ff99cc;
+      box-sizing: border-box;
+      pointer-events: none;
+      z-index: 3;
+    }
     video, canvas {
       position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       transform: scaleX(-1); /* mirror */
-      filter: brightness(1.12) contrast(1.05) saturate(1.1) blur(0.5px);
+      filter: brightness(1.1) contrast(1.05) saturate(1.1) blur(0.5px);
     }
-
-    #frame {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border: 30px solid #ffb6c1;
-      box-sizing: border-box;
+    canvas {
       z-index: 2;
       pointer-events: none;
     }
-
     #fotoBtn {
       position: absolute;
-      bottom: 80px;
+      bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      width: 70px;
-      height: 70px;
-      background: #ff69b4;
+      width: 75px;
+      height: 75px;
       border-radius: 50%;
+      background-color: #ff66a3;
       border: none;
+      font-size: 32px;
       color: white;
-      font-size: 30px;
-      box-shadow: 0 0 15px #d46da6;
-      cursor: pointer;
-      z-index: 3;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      z-index: 4;
+      cursor: pointer;
+      box-shadow: 0 0 15px #e88eb4;
     }
-
     @media (max-width: 768px) {
       #fotoBtn {
-        bottom: 40px;
-        width: 60px;
-        height: 60px;
+        bottom: 20px;
+        width: 65px;
+        height: 65px;
         font-size: 26px;
       }
     }
@@ -78,16 +72,16 @@
 </head>
 <body>
   <div id="container">
-    <video id="kamera" autoplay muted playsinline></video>
-    <canvas id="canvas"></canvas>
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
     <div id="frame"></div>
     <button id="fotoBtn">📸</button>
-    <a id="downloadLink" download="Fla-Foto.png" style="display: none;"></a>
+    <a id="downloadLink" download="Foto-Fla.png" style="display: none;"></a>
   </div>
 
   <script>
-    const video = document.getElementById('kamera');
-    const canvas = document.getElementById('canvas');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('overlay');
     const context = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
     const downloadLink = document.getElementById('downloadLink');
@@ -98,49 +92,38 @@
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         video.srcObject = stream;
       } catch (err) {
-        alert('Gagal membuka kamera: ' + err.message);
+        alert("Gagal membuka kamera: " + err.message);
       }
     }
 
-    // Menyesuaikan ukuran canvas dengan video
-    function sesuaikanUkuran() {
-      const rasioHP = window.innerWidth / window.innerHeight;
-
-      if (rasioHP < 0.7) {
-        // HP, ukuran vertikal
-        canvas.width = 1080;
-        canvas.height = 1350;
-      } else {
-        // Laptop/desktop, ukuran horizontal
-        canvas.width = 1080;
-        canvas.height = 608;
-      }
-    }
-
+    // Foto
     fotoBtn.addEventListener('click', () => {
-      sesuaikanUkuran();
-      const ctx = canvas.getContext('2d');
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
+      const aspectRatio = window.innerWidth < 768 ? (1080 / 1250) : (1080 / 608);
+      const width = 1080;
+      const height = Math.round(1080 / aspectRatio);
 
-      ctx.translate(canvas.width, 0);
+      const fotoCanvas = document.createElement('canvas');
+      fotoCanvas.width = width;
+      fotoCanvas.height = height;
+      const ctx = fotoCanvas.getContext('2d');
+
+      ctx.filter = 'brightness(1.1) contrast(1.05) saturate(1.1) blur(0.5px)';
+      ctx.translate(width, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, width, height);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-      // gambar frame pink di hasil
-      ctx.lineWidth = 60;
-      ctx.strokeStyle = "#ffb6c1";
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      // Tambah frame pink
+      ctx.lineWidth = 40;
+      ctx.strokeStyle = '#ff99cc';
+      ctx.strokeRect(0, 0, width, height);
 
-      const dataURL = canvas.toDataURL('image/png');
+      const dataURL = fotoCanvas.toDataURL('image/png');
       downloadLink.href = dataURL;
       downloadLink.click();
     });
 
-    window.addEventListener('resize', sesuaikanUkuran);
     startKamera();
-    sesuaikanUkuran();
   </script>
 </body>
 </html>
