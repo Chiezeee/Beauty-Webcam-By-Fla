@@ -1,47 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Beauty Webcam by Fla</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background: #ffe6f0;
+      font-family: sans-serif;
       height: 100%;
       overflow: hidden;
-      font-family: sans-serif;
     }
-
     #container {
       position: relative;
       width: 100vw;
       height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
-
     video, canvas {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      border-radius: 20px;
       object-fit: cover;
+      filter: brightness(1.15) contrast(1.05) saturate(1.05);
       transform: scaleX(-1);
-      filter: brightness(1.15) contrast(1.05) saturate(1.05) blur(0.5px);
     }
-
+    video {
+      z-index: 1;
+    }
     canvas {
       z-index: 2;
       pointer-events: none;
     }
-
     #fotoBtn {
       position: absolute;
-      bottom: 30px;
+      bottom: 60px;
       left: 50%;
       transform: translateX(-50%);
       width: 80px;
@@ -49,7 +45,7 @@
       border-radius: 50%;
       background: #ff66a3;
       border: none;
-      font-size: 32px;
+      font-size: 30px;
       color: white;
       display: flex;
       align-items: center;
@@ -58,13 +54,23 @@
       z-index: 3;
       cursor: pointer;
     }
-
     @media (max-width: 768px) {
+      video, canvas {
+        width: 90vw;
+        height: auto;
+        max-height: 90vh;
+      }
       #fotoBtn {
-        bottom: 20px;
+        bottom: 30px;
         width: 70px;
         height: 70px;
         font-size: 28px;
+      }
+    }
+    @media (min-width: 769px) {
+      video, canvas {
+        width: 800px;
+        height: 608px;
       }
     }
   </style>
@@ -80,61 +86,62 @@
   <script>
     const video = document.getElementById('kamera');
     const canvas = document.getElementById('overlay');
-    const context = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     const fotoBtn = document.getElementById('fotoBtn');
     const downloadLink = document.getElementById('downloadLink');
 
     async function startKamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         video.srcObject = stream;
       } catch (err) {
         alert("Kamera gagal dibuka: " + err.message);
       }
     }
 
-    function ambilResolusi() {
-      const isMobile = window.innerWidth <= 768;
-      return isMobile
-        ? { w: 1080, h: 1350 }  // HP
-        : { w: 800, h: 608 };   // Laptop
+    function updateCanvasSize() {
+      const rect = video.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
     }
 
-    fotoBtn.addEventListener('click', () => {
-      const { w, h } = ambilResolusi();
-
-      const fotoCanvas = document.createElement('canvas');
-      fotoCanvas.width = w;
-      fotoCanvas.height = h;
-      const ctx = fotoCanvas.getContext('2d');
-
-      // Hitung scaling agar proporsional dari video asli
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-
-      // Mirror gambar dari video
-      ctx.translate(w, 0);
-      ctx.scale(-1, 1);
-
-      // Gambar video
-      ctx.drawImage(video, (vw - w) / 2, (vh - h) / 2, w, h, 0, 0, w, h);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      // Gambar frame overlay juga
-      ctx.drawImage(canvas, 0, 0, w, h);
-
-      const dataURL = fotoCanvas.toDataURL('image/png');
-      downloadLink.href = dataURL;
-      downloadLink.click();
+    video.addEventListener('loadedmetadata', () => {
+      updateCanvasSize();
+      window.addEventListener('resize', updateCanvasSize);
     });
 
-    // Update canvas size saat video siap
-    video.addEventListener('loadedmetadata', () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    fotoBtn.addEventListener('click', () => {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      const hasil = document.createElement('canvas');
+      const rasio = window.innerWidth <= 768 ? (1080 / 1350) : (800 / 608);
+      hasil.width = window.innerWidth <= 768 ? 1080 : 800;
+      hasil.height = Math.round(hasil.width / rasio);
+
+      const hasilCtx = hasil.getContext('2d');
+
+      // mirror image
+      hasilCtx.translate(hasil.width, 0);
+      hasilCtx.scale(-1, 1);
+
+      // draw video
+      hasilCtx.drawImage(video, 0, 0, hasil.width, hasil.height);
+
+      // draw frame pink (optional)
+      hasilCtx.setTransform(1, 0, 0, 1, 0, 0);
+      hasilCtx.fillStyle = "rgba(255, 204, 229, 0.25)";
+      hasilCtx.fillRect(0, 0, hasil.width, hasil.height);
+
+      const dataURL = hasil.toDataURL("image/png");
+      downloadLink.href = dataURL;
+      downloadLink.click();
     });
 
     startKamera();
   </script>
 </body>
 </html>
+
